@@ -1,12 +1,12 @@
 import express from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+
 import mongoose from "mongoose";
-import {validationResult} from 'express-validator';
 
 import {registerValidation} from './validtaions/auth.js';
 
-import UserModel from './models/User.js';
+import checkAuth from './utils/checkAuth.js';
+
+import * as UserController from './controllers/UserController.js';
 
 mongoose
     .connect('mongodb+srv://root:wwwwww@cluster0.bvngfwt.mongodb.net/blog?retryWrites=true&w=majority')
@@ -16,44 +16,11 @@ const app = express();
 
 app.use(express.json());
 
-app.post('/auth/register', registerValidation, async (req, res) =>{
-    try {
-        const errors = validationResult(req);
-        if(!errors.isEmpty()) {
-            return res.status(400).json(errors.array());
-        }
+app.post('/auth/login', UserController.login);
 
-        const password = req.body.password;
-        const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(password, salt);
+app.post('/auth/register', registerValidation, UserController.register);
 
-        const doc = new UserModel({
-            email: req.body.email,
-            fullName: req.body.fullName,
-            avatarUrl: req.body.avatarUrl,
-            passwordHash,
-        });
-
-        const user = await doc.save();
-
-        const token = jwt.sign({
-            _id: user._id,
-        }, 'secret123', {
-            expiresIn: '30d',
-        });
-
-        res.json({
-            ...user._doc,
-            token,
-    });
-    } catch (err){
-        console.log(err);
-        res.status(500).json({
-            message: 'Не удалось зарегистрироваться',
-        });
-    }
-
-});
+app.get('/auth/me', checkAuth, UserController.getMe);
 
 app.listen(4444, (err) => {
     if (err) {
