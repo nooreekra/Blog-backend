@@ -55,7 +55,7 @@ app.patch(
     PostController.update);
 
 
-app.listen(4422, (err) => {
+app.listen(4444, (err) => {
     if (err) {
         return console.log(err)
     }
